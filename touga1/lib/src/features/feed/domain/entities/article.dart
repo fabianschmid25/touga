@@ -7,11 +7,15 @@ class Article {
   final String title;
   final List<String> imageUrls;
   final String content;
+  final int likesCount; // neu
+  final int commentsCount; // neu
 
   Article({
     required this.id,
     required this.title,
     required this.imageUrls,
     required this.content,
+    required this.likesCount,
+    required this.commentsCount,
   });
 }
