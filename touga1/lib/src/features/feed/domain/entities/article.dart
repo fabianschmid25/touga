@@ -9,6 +9,7 @@ class Article {
   final String content;
   final int likesCount; // neu
   final int commentsCount; // neu
+  final String subtitle; // neue Begleitschrift
 
   Article({
     required this.id,
@@ -17,5 +18,6 @@ class Article {
     required this.content,
     required this.likesCount,
     required this.commentsCount,
+    required this.subtitle,
   });
 }

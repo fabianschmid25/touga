@@ -13,6 +13,10 @@ import 'action_bar.dart';
 /// - Pointer‑Up → Resume
 /// - Long‑Press ebenfalls Pause/Resume
 /// Zusätzlich erscheinen rechts Profil‑, Like‑, Kommentar‑ und Share‑Icons.
+///
+/// Bei Bildindex 0 wird oben eine kleine Begleitschrift (subtitle) angezeigt,
+/// darunter der Titel in größerer Schrift. Bei allen weiteren Bildern
+/// erscheint nur der Titel.
 class FeedHorizontalView extends StatefulWidget {
   final Article article;
   final VoidCallback onComplete;
@@ -73,11 +77,11 @@ class _FeedHorizontalViewState extends State<FeedHorizontalView>
     final urls = widget.article.imageUrls;
 
     return Listener(
-      onPointerDown: (_) => _animController.stop(), // sofort pause
-      onPointerUp: (_) => _animController.forward(), // sofort resume
+      onPointerDown: (_) => _animController.stop(),
+      onPointerUp: (_) => _animController.forward(),
       child: Stack(
         children: [
-          // 1) Bild-Carousel
+          // 1) Vollbild-Bild-Carousel mit Tap & LongPress
           PageView.builder(
             controller: _pageController,
             itemCount: urls.length,
@@ -102,7 +106,7 @@ class _FeedHorizontalViewState extends State<FeedHorizontalView>
             ),
           ),
 
-          // 2) Titel + Progress Bars unten
+          // 2) Subtitle (nur erstes Bild) + Titel unten
           Positioned(
             bottom: 16,
             left: 16,
@@ -110,7 +114,17 @@ class _FeedHorizontalViewState extends State<FeedHorizontalView>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Klickbarer Titel
+                if (_current == 0) ...[
+                  Text(
+                    widget.article.subtitle,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
                 GestureDetector(
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
@@ -121,7 +135,7 @@ class _FeedHorizontalViewState extends State<FeedHorizontalView>
                     widget.article.title,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 24,
+                      fontSize: 28, // etwas größer
                       fontWeight: FontWeight.bold,
                       shadows: [Shadow(blurRadius: 4, color: Colors.black54)],
                     ),
@@ -132,7 +146,6 @@ class _FeedHorizontalViewState extends State<FeedHorizontalView>
                 Row(
                   children: List.generate(urls.length, (i) {
                     if (i < _current) {
-                      // abgeschlossene Slides
                       return Expanded(
                         child: Container(
                           margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -141,7 +154,6 @@ class _FeedHorizontalViewState extends State<FeedHorizontalView>
                         ),
                       );
                     } else if (i == _current) {
-                      // aktueller Slide mit Animation
                       return Expanded(
                         child: Container(
                           margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -158,7 +170,6 @@ class _FeedHorizontalViewState extends State<FeedHorizontalView>
                         ),
                       );
                     } else {
-                      // kommende Slides
                       return Expanded(
                         child: Container(
                           margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -176,21 +187,19 @@ class _FeedHorizontalViewState extends State<FeedHorizontalView>
           // 3) ActionBar rechts
           Positioned(
             right: 16,
-            bottom: 80,
+            bottom: 120,
             child: ActionBar(
               article: widget.article,
               onLike: () {
-                // TODO: Like‑Logik
+                // TODO: Like-Logik
               },
-              onComment: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ArticlePage(article: widget.article),
-                  ),
-                );
-              },
+              onComment: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ArticlePage(article: widget.article),
+                ),
+              ),
               onShare: () {
-                // TODO: Share‑Dialog öffnen
+                // TODO: Share-Dialog
               },
             ),
           ),

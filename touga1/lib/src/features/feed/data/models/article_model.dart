@@ -1,11 +1,13 @@
+// lib/src/features/feed/data/models/article_model.dart
+
 import '../../domain/entities/article.dart';
-import 'dart:math';
 
 class ArticleModel {
   final String id;
   final String title;
   final List<String> imageUrls;
   final String content;
+  final String subtitle; // neu
   final int likesCount;
   final int commentsCount;
 
@@ -14,6 +16,7 @@ class ArticleModel {
     required this.title,
     required this.imageUrls,
     required this.content,
+    required this.subtitle, // neu
     required this.likesCount,
     required this.commentsCount,
   });
@@ -23,6 +26,7 @@ class ArticleModel {
     title: title,
     imageUrls: imageUrls,
     content: content,
+    subtitle: subtitle, // neu
     likesCount: likesCount,
     commentsCount: commentsCount,
   );
