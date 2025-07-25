@@ -1,74 +1,73 @@
-import { Injectable } from '@nestjs/common';
+// src/articles/articles.service.ts
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateArticleDto } from './dto/create-article.dto';
-import { Article } from '@prisma/client';
+import { Article, Prisma } from '@prisma/client';
 
 @Injectable()
 export class ArticlesService {
     constructor(private readonly prisma: PrismaService) { }
 
-    /**
-     * Gibt alle Artikel sortiert nach Erstellungsdatum (neueste zuerst) zurück.
-     */
-    findAll(): Promise<Article[]> {
+    /** Alle Artikel (ohne gelöschte) inklusive Bilder & Kategorien laden */
+    async findAll(): Promise<Article[]> {
         return this.prisma.article.findMany({
+            where: { deletedAt: null },
+            include: {
+                images: true,
+                categories: true,
+            },
             orderBy: { createdAt: 'desc' },
-            select: {
-                id: true,
-                title: true,
-                content: true,
-                subtitle: true,
-                imageUrls: true,
-                authorId: true,
-                createdAt: true,
-            },
         });
     }
 
-    /**
-     * Gibt einen einzelnen Artikel anhand seiner ID zurück.
-     */
-    findOne(id: string): Promise<Article | null> {
-        return this.prisma.article.findUnique({
+    /** Einzelnen Artikel (inkl. Bilder & Kategorien) laden */
+    async findOne(id: string): Promise<Article> {
+        const article = await this.prisma.article.findUnique({
             where: { id },
-            select: {
-                id: true,
-                title: true,
-                content: true,
-                subtitle: true,
-                imageUrls: true,
-                authorId: true,
-                createdAt: true,
+            include: {
+                images: true,
+                categories: true,
+            },
+        });
+        if (!article) throw new NotFoundException(`Article ${id} not found`);
+        return article;
+    }
+
+    /** Neuen Artikel anlegen, dabei DTO.imageUrls → nested create images */
+    async create(dto: CreateArticleDto, authorId: string): Promise<Article> {
+        // dto.imageUrls: string[]
+        // dto.categoryIds?: string[]
+        const imagesCreate = dto.imageUrls.map((url, idx) => ({
+            url,
+            order: idx,
+        }));
+
+        // Prepare nested writes
+        const data: Prisma.ArticleCreateInput = {
+            title: dto.title,
+            subtitle: dto.subtitle,
+            content: dto.content,
+            author: { connect: { id: authorId } },
+            images: { create: imagesCreate },
+            categories: dto.categoryIds
+                ? { connect: dto.categoryIds.map(id => ({ id })) }
+                : undefined,
+        };
+
+        return this.prisma.article.create({
+            data,
+            include: {
+                images: true,
+                categories: true,
             },
         });
     }
 
-    /**
-     * Legt einen neuen Artikel an.
-     * Wenn der Author noch nicht existiert, wird er zuvor per upsert angelegt.
-     */
-    async create(dto: CreateArticleDto): Promise<Article> {
-        const userId = '00000000-0000-0000-0000-000000000000';
-
-        // 1) User upserten (falls nicht vorhanden)
-        await this.prisma.user.upsert({
-            where: { id: userId },
-            update: {},  // keine Änderungen, wenn der User bereits existiert
-            create: {
-                id: userId,
-                email: 'test@example.com', // mindestens required-Feld(e) deines User-Modells
-            },
-        });
-
-        // 2) Artikel mit authorId anlegen
-        return this.prisma.article.create({
-            data: {
-                title: dto.title,
-                content: dto.content,
-                subtitle: dto.subtitle,
-                imageUrls: dto.imageUrls,
-                authorId: userId,
-            },
+    /** Soft‑Delete: deletedAt setzen */
+    async remove(id: string): Promise<void> {
+        await this.prisma.article.update({
+            where: { id },
+            data: { deletedAt: new Date() },
         });
     }
 }

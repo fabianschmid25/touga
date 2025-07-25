@@ -13,9 +13,10 @@ exports.CreateArticleDto = void 0;
 const class_validator_1 = require("class-validator");
 class CreateArticleDto {
     title;
-    content;
     subtitle;
+    content;
     imageUrls;
+    categoryIds;
 }
 exports.CreateArticleDto = CreateArticleDto;
 __decorate([
@@ -25,16 +26,24 @@ __decorate([
 ], CreateArticleDto.prototype, "title", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateArticleDto.prototype, "subtitle", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateArticleDto.prototype, "content", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], CreateArticleDto.prototype, "subtitle", void 0);
-__decorate([
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ArrayNotEmpty)(),
+    (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
 ], CreateArticleDto.prototype, "imageUrls", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)('4', { each: true }),
+    __metadata("design:type", Array)
+], CreateArticleDto.prototype, "categoryIds", void 0);
 //# sourceMappingURL=create-article.dto.js.map

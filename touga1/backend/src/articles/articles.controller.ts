@@ -30,7 +30,10 @@ export class ArticlesController {
     @Post()
     async create(@Body() dto: CreateArticleDto): Promise<Article> {
         try {
-            return await this.svc.create(dto);
+            // Variante 2: Dummy‑User bis Auth implementiert ist.
+            // TODO später: mit JWT‑Guard o.ä. ersetzen und req.user.id übergeben. ersetzten mit const authorId = req.user.id;
+            const DUMMY_USER_ID = '00000000-0000-0000-0000-000000000000';
+            return this.svc.create(dto, DUMMY_USER_ID);
         } catch (err) {
             console.error('Error creating article:', err);
             throw new InternalServerErrorException(err.message);

@@ -29,7 +29,8 @@ let ArticlesController = class ArticlesController {
     }
     async create(dto) {
         try {
-            return await this.svc.create(dto);
+            const DUMMY_USER_ID = '00000000-0000-0000-0000-000000000000';
+            return this.svc.create(dto, DUMMY_USER_ID);
         }
         catch (err) {
             console.error('Error creating article:', err);

@@ -5,6 +5,7 @@ export declare class ArticlesService {
     private readonly prisma;
     constructor(prisma: PrismaService);
     findAll(): Promise<Article[]>;
-    findOne(id: string): Promise<Article | null>;
-    create(dto: CreateArticleDto): Promise<Article>;
+    findOne(id: string): Promise<Article>;
+    create(dto: CreateArticleDto, authorId: string): Promise<Article>;
+    remove(id: string): Promise<void>;
 }

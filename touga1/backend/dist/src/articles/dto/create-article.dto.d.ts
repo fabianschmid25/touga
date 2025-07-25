@@ -1,6 +1,7 @@
 export declare class CreateArticleDto {
     title: string;
-    content: string;
     subtitle?: string;
+    content: string;
     imageUrls: string[];
+    categoryIds?: string[];
 }

@@ -17,52 +17,55 @@ let ArticlesService = class ArticlesService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    findAll() {
+    async findAll() {
         return this.prisma.article.findMany({
+            where: { deletedAt: null },
+            include: {
+                images: true,
+                categories: true,
+            },
             orderBy: { createdAt: 'desc' },
-            select: {
-                id: true,
-                title: true,
-                content: true,
-                subtitle: true,
-                imageUrls: true,
-                authorId: true,
-                createdAt: true,
-            },
         });
     }
-    findOne(id) {
-        return this.prisma.article.findUnique({
+    async findOne(id) {
+        const article = await this.prisma.article.findUnique({
             where: { id },
-            select: {
-                id: true,
-                title: true,
-                content: true,
-                subtitle: true,
-                imageUrls: true,
-                authorId: true,
-                createdAt: true,
+            include: {
+                images: true,
+                categories: true,
+            },
+        });
+        if (!article)
+            throw new common_1.NotFoundException(`Article ${id} not found`);
+        return article;
+    }
+    async create(dto, authorId) {
+        const imagesCreate = dto.imageUrls.map((url, idx) => ({
+            url,
+            order: idx,
+        }));
+        const data = {
+            title: dto.title,
+            subtitle: dto.subtitle,
+            content: dto.content,
+            author: { connect: { id: authorId } },
+            images: { create: imagesCreate },
+            categories: dto.categoryIds
+                ? { connect: dto.categoryIds.map(id => ({ id })) }
+                : undefined,
+        };
+        return this.prisma.article.create({
+            data,
+            include: {
+                images: true,
+                categories: true,
             },
         });
     }
-    async create(dto) {
-        const userId = '00000000-0000-0000-0000-000000000000';
-        await this.prisma.user.upsert({
-            where: { id: userId },
-            update: {},
-            create: {
-                id: userId,
-                email: 'test@example.com',
-            },
-        });
-        return this.prisma.article.create({
-            data: {
-                title: dto.title,
-                content: dto.content,
-                subtitle: dto.subtitle,
-                imageUrls: dto.imageUrls,
-                authorId: userId,
-            },
+    async remove(id) {
+        await this.prisma.article.update({
+            where: { id },
+            data: { deletedAt: new Date() },
         });
     }
 };

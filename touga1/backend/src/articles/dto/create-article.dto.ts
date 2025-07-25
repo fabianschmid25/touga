@@ -1,16 +1,21 @@
 // src/articles/dto/create-article.dto.ts
-import { IsString, IsNotEmpty, IsArray, ArrayNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsArray, ArrayNotEmpty, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateArticleDto {
     @IsString() @IsNotEmpty()
-    title: string;
+    title!: string;
 
-    @IsString() @IsNotEmpty()
-    content: string;
-
-    @IsString()
+    @IsString() @IsOptional()
     subtitle?: string;
 
+    @IsString() @IsNotEmpty()
+    content!: string;
+
     @IsArray() @ArrayNotEmpty()
-    imageUrls: string[];
+    @IsString({ each: true })
+    imageUrls!: string[];
+
+    @IsArray() @IsOptional()
+    @IsUUID('4', { each: true })
+    categoryIds?: string[];
 }
