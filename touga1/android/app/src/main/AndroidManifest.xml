@@ -4,6 +4,10 @@
         android:label="touga1"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+              <!-- ERLAUBE HTTP (Cleartext) -->
+        android:usesCleartextTraffic="true"
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

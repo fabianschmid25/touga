@@ -1,206 +1,156 @@
 // lib/src/features/feed/presentation/widgets/feed_horizontal_view.dart
 
+import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-
 import '../../domain/entities/article.dart';
-import '../pages/article_page.dart';
-import 'action_bar.dart';
 
-/// Zeigt die 3 Bilder eines Artikels,
-/// wechselt alle 4 s automatisch und springt am Ende per onComplete() vertikal weiter.
-/// - Pointer‑Down → Pause
-/// - Pointer‑Up → Resume
-/// - Long‑Press ebenfalls Pause/Resume
-/// Zusätzlich erscheinen rechts Profil‑, Like‑, Kommentar‑ und Share‑Icons.
-///
-/// Bei Bildindex 0 wird oben eine kleine Begleitschrift (subtitle) angezeigt,
-/// darunter der Titel in größerer Schrift. Bei allen weiteren Bildern
-/// erscheint nur der Titel.
+/// Zeigt pro Artikel die drei Bilder in 9:16,
+/// wechselt automatisch alle 4 Sekunden und pausiert bei Touch.
 class FeedHorizontalView extends StatefulWidget {
   final Article article;
-  final VoidCallback onComplete;
 
-  const FeedHorizontalView({
-    Key? key,
-    required this.article,
-    required this.onComplete,
-  }) : super(key: key);
+  /// Wird aufgerufen, wenn dieser Artikel komplett angezeigt wurde.
+  /// Kann z. B. genutzt werden, um zum nächsten Artikel zu wechseln.
+  final VoidCallback? onComplete;
+
+  const FeedHorizontalView({Key? key, required this.article, this.onComplete})
+    : super(key: key);
 
   @override
-  _FeedHorizontalViewState createState() => _FeedHorizontalViewState();
+  State<FeedHorizontalView> createState() => _FeedHorizontalViewState();
 }
 
-class _FeedHorizontalViewState extends State<FeedHorizontalView>
-    with SingleTickerProviderStateMixin {
+class _FeedHorizontalViewState extends State<FeedHorizontalView> {
+  static const _displayDuration = Duration(seconds: 4);
   late final PageController _pageController;
-  late final AnimationController _animController;
-  int _current = 0;
+  Timer? _timer;
+  bool _isTouching = false;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
-    _animController =
-        AnimationController(vsync: this, duration: const Duration(seconds: 4))
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              if (_current < widget.article.imageUrls.length - 1) {
-                _pageController.nextPage(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-              } else {
-                widget.onComplete();
-              }
-            }
-          });
-    _animController.forward();
+    _startAutoSwitch();
+  }
+
+  void _startAutoSwitch() {
+    _timer?.cancel();
+    _timer = Timer.periodic(_displayDuration, (_) {
+      if (_isTouching) return;
+      final next = _pageController.page!.toInt() + 1;
+      if (next < widget.article.imageUrls.length) {
+        _pageController.animateToPage(
+          next,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        widget.onComplete?.call();
+      }
+    });
+  }
+
+  void _pauseAutoSwitch() {
+    _isTouching = true;
+  }
+
+  void _resumeAutoSwitch() {
+    _isTouching = false;
   }
 
   @override
   void dispose() {
-    _animController.dispose();
+    _timer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
 
-  void _onPageChanged(int index) {
-    setState(() => _current = index);
-    _animController
-      ..reset()
-      ..forward();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final urls = widget.article.imageUrls;
+    // Aktuelle Page (als double), oder 0.0 wenn noch keine Clients
+    final currentPage = _pageController.hasClients
+        ? (_pageController.page ?? _pageController.initialPage.toDouble())
+        : 0.0;
 
-    return Listener(
-      onPointerDown: (_) => _animController.stop(),
-      onPointerUp: (_) => _animController.forward(),
+    return GestureDetector(
+      onLongPressStart: (_) => _pauseAutoSwitch(),
+      onLongPressEnd: (_) => _resumeAutoSwitch(),
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          // 1) Vollbild-Bild-Carousel mit Tap & LongPress
+          // Bilder horizontal swipen
           PageView.builder(
             controller: _pageController,
-            itemCount: urls.length,
-            onPageChanged: _onPageChanged,
-            itemBuilder: (_, i) => GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ArticlePage(article: widget.article),
-                ),
-              ),
-              onLongPressStart: (_) => _animController.stop(),
-              onLongPressEnd: (_) => _animController.forward(),
-              child: CachedNetworkImage(
-                imageUrl: urls[i],
+            itemCount: widget.article.imageUrls.length,
+            itemBuilder: (context, index) {
+              return Image.network(
+                widget.article.imageUrls[index],
                 fit: BoxFit.cover,
-                placeholder: (_, __) =>
-                    const Center(child: CircularProgressIndicator()),
-                errorWidget: (_, __, ___) =>
-                    const Center(child: Icon(Icons.error)),
-              ),
+                loadingBuilder: (c, child, progress) {
+                  if (progress == null) return child;
+                  return const Center(child: CircularProgressIndicator());
+                },
+              );
+            },
+            onPageChanged: (_) => _startAutoSwitch(),
+          ),
+
+          // Progress‑Balken unten unter dem Titel
+          Positioned(
+            bottom: 20,
+            left: 16,
+            right: 16,
+            child: Row(
+              children: List.generate(widget.article.imageUrls.length, (i) {
+                // Berechne den Fortschritt für Balken i
+                final value = currentPage >= (i + 1)
+                    ? 1.0
+                    : (currentPage - i).clamp(0.0, 1.0) as double;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: LinearProgressIndicator(
+                      value: value,
+                      backgroundColor: Colors.white24,
+                      valueColor: const AlwaysStoppedAnimation(Colors.white),
+                    ),
+                  ),
+                );
+              }),
             ),
           ),
 
-          // 2) Subtitle (nur erstes Bild) + Titel unten
+          // Titel + Subtitle
           Positioned(
-            bottom: 16,
+            bottom: 60,
             left: 16,
             right: 16,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (_current == 0) ...[
-                  Text(
-                    widget.article.subtitle,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                      fontStyle: FontStyle.italic,
+                // Subtitle nur beim ersten Bild
+                if (currentPage < 1 && widget.article.subtitle.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      widget.article.subtitle,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                ],
-                GestureDetector(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ArticlePage(article: widget.article),
-                    ),
+
+                Text(
+                  widget.article.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                   ),
-                  child: Text(
-                    widget.article.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28, // etwas größer
-                      fontWeight: FontWeight.bold,
-                      shadows: [Shadow(blurRadius: 4, color: Colors.black54)],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Progress Bars
-                Row(
-                  children: List.generate(urls.length, (i) {
-                    if (i < _current) {
-                      return Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          height: 4,
-                          color: Colors.white,
-                        ),
-                      );
-                    } else if (i == _current) {
-                      return Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          height: 4,
-                          color: Colors.white38,
-                          child: AnimatedBuilder(
-                            animation: _animController,
-                            builder: (_, __) => FractionallySizedBox(
-                              widthFactor: _animController.value,
-                              alignment: Alignment.centerLeft,
-                              child: Container(color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      );
-                    } else {
-                      return Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          height: 4,
-                          color: Colors.white38,
-                        ),
-                      );
-                    }
-                  }),
                 ),
               ],
-            ),
-          ),
-
-          // 3) ActionBar rechts
-          Positioned(
-            right: 16,
-            bottom: 120,
-            child: ActionBar(
-              article: widget.article,
-              onLike: () {
-                // TODO: Like-Logik
-              },
-              onComment: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ArticlePage(article: widget.article),
-                ),
-              ),
-              onShare: () {
-                // TODO: Share-Dialog test
-              },
             ),
           ),
         ],

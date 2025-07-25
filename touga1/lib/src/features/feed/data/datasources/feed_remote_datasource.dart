@@ -1,41 +1,41 @@
-// lib/src/features/feed/data/datasources/feed_remote_datasource.dart
-
-import 'dart:math';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import '../models/article_model.dart';
 
 class FeedRemoteDataSource {
-  final _rnd = Random();
+  // Ersetze durch deine lokale PC‑IP oder ngrok‑URL
+  static const _baseUrl = 'http://192.168.2.118:3000';
 
-  /// Simuliere 5 Artikel pro Seite,
-  /// jeder mit 3 Bildern, zufälligen Countern und einem Subtitle.
-  Future<List<ArticleModel>> fetchPage(int page) async {
-    await Future.delayed(const Duration(milliseconds: 500));
+  /// Lädt die Artikelliste vom Backend und loggt jeden Schritt.
+  Future<List<ArticleModel>> fetchPage({int page = 0}) async {
+    final uri = Uri.parse('$_baseUrl/articles');
+    debugPrint('🔎 [FeedRemote] GET $uri (page=$page)');
+    try {
+      // 15‑Sekunden Timeout, um lange Hänger abzufangen
+      final resp = await http
+          .get(uri)
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () =>
+                throw Exception('⏱️ Timeout nach 15s beim GET $uri'),
+          );
 
-    return List.generate(5, (i) {
-      final idx = page * 5 + i + 1;
+      debugPrint('📥 [FeedRemote] Status: ${resp.statusCode}');
+      debugPrint('📄 [FeedRemote] Body: ${resp.body}');
 
-      // Drei zufällige Bilder pro Artikel
-      final imgs = List.generate(
-        3,
-        (j) => 'https://picsum.photos/900/1600?random=${idx * 10 + j}',
-      );
+      if (resp.statusCode != 200) {
+        throw Exception('HTTP ${resp.statusCode}: ${resp.reasonPhrase}');
+      }
 
-      // Mock-Zähler
-      final likes = _rnd.nextInt(500); // 0–499
-      final comments = _rnd.nextInt(100); // 0–99
-
-      // Begleitspruch
-      final subtitle = 'Kurzer Begleittext zu Artikel $idx';
-
-      return ArticleModel(
-        id: 'article_$idx',
-        title: 'Artikel $idx',
-        imageUrls: imgs,
-        content: 'Inhalt von Artikel $idx…\n\nLorem ipsum dolor sit amet.',
-        subtitle: subtitle, // neu
-        likesCount: likes,
-        commentsCount: comments,
-      );
-    });
+      final jsonData = json.decode(resp.body) as List<dynamic>;
+      return jsonData
+          .map((e) => ArticleModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e, st) {
+      debugPrint('❌ [FeedRemote] Unerwarteter Fehler: $e');
+      debugPrint('🐛 [FeedRemote] StackTrace:\n$st');
+      rethrow;
+    }
   }
 }
