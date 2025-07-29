@@ -12,14 +12,14 @@ export declare class AuthService {
     }>;
     validateUser(email: string, password: string): Promise<{
         id: string;
+        email: string;
+        passwordHash: string;
         name: string | null;
+        avatarUrl: string | null;
+        role: import(".prisma/client").$Enums.Role;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
-        email: string;
-        passwordHash: string;
-        avatarUrl: string | null;
-        role: import(".prisma/client").$Enums.Role;
     } | null>;
     login(dto: LoginDto): Promise<{
         accessToken: string;
@@ -35,13 +35,13 @@ export declare class AuthService {
     }>;
     getUserById(id: string): Promise<{
         id: string;
+        email: string;
+        passwordHash: string;
         name: string | null;
+        avatarUrl: string | null;
+        role: import(".prisma/client").$Enums.Role;
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
-        email: string;
-        passwordHash: string;
-        avatarUrl: string | null;
-        role: import(".prisma/client").$Enums.Role;
     }>;
 }

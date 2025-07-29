@@ -1,5 +1,3 @@
-// lib/src/features/feed/data/models/article_model.dart
-
 import '../../domain/entities/article.dart';
 
 class ArticleModel {
@@ -27,9 +25,10 @@ class ArticleModel {
       title: json['title'] as String,
       content: json['content'] as String,
       subtitle: json['subtitle'] as String? ?? '',
-      imageUrls: List<String>.from(json['imageUrls'] as List<dynamic>),
+      imageUrls:
+          (json['imageUrls'] as List?)?.map((e) => e.toString()).toList() ?? [],
       authorId: json['authorId'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
     );
   }
 
