@@ -1,160 +1,124 @@
-// lib/src/features/feed/presentation/widgets/feed_horizontal_view.dart
-
 import 'dart:async';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../../domain/entities/article.dart';
+import '../pages/article_page.dart';
 
-/// Zeigt pro Artikel die drei Bilder in 9:16,
-/// wechselt automatisch alle 4 Sekunden und pausiert bei Touch.
 class FeedHorizontalView extends StatefulWidget {
   final Article article;
 
-  /// Wird aufgerufen, wenn dieser Artikel komplett angezeigt wurde.
-  /// Kann z. B. genutzt werden, um zum nächsten Artikel zu wechseln.
-  final VoidCallback? onComplete;
-
-  const FeedHorizontalView({Key? key, required this.article, this.onComplete})
-    : super(key: key);
+  const FeedHorizontalView({super.key, required this.article});
 
   @override
   State<FeedHorizontalView> createState() => _FeedHorizontalViewState();
 }
 
 class _FeedHorizontalViewState extends State<FeedHorizontalView> {
-  static const _displayDuration = Duration(seconds: 4);
   late final PageController _pageController;
-  Timer? _timer;
-  bool _isTouching = false;
+  int _currentPage = 0;
+  Timer? _autoScrollTimer;
+  bool _isHolding = false;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
-    _startAutoSwitch();
+    _startAutoScroll();
   }
 
-  void _startAutoSwitch() {
-    _timer?.cancel();
-    _timer = Timer.periodic(_displayDuration, (_) {
-      if (_isTouching) return;
-      final next = _pageController.page!.toInt() + 1;
-      if (next < widget.article.imageUrls.length) {
-        _pageController.animateToPage(
-          next,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
+  void _startAutoScroll() {
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_isHolding) return;
+      if (_currentPage < (widget.article.imageUrls.length - 1)) {
+        _currentPage++;
       } else {
-        widget.onComplete?.call();
+        _currentPage = 0;
       }
+      _pageController.animateToPage(
+        _currentPage,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
     });
   }
 
-  void _pauseAutoSwitch() {
-    _isTouching = true;
-  }
-
-  void _resumeAutoSwitch() {
-    _isTouching = false;
+  void _onTapZone(TapUpDetails details, BoxConstraints constraints) {
+    final dx = details.localPosition.dx;
+    final width = constraints.maxWidth;
+    if (dx < width / 2 && _currentPage > 0) {
+      _currentPage--;
+    } else if (dx >= width / 2 &&
+        _currentPage < widget.article.imageUrls.length - 1) {
+      _currentPage++;
+    }
+    _pageController.animateToPage(
+      _currentPage,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     _pageController.dispose();
+    _autoScrollTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Aktuelle Page (als double), oder 0.0 wenn noch keine Clients
-    final currentPage = _pageController.hasClients
-        ? (_pageController.page ?? _pageController.initialPage.toDouble())
-        : 0.0;
-
-    return GestureDetector(
-      onLongPressStart: (_) => _pauseAutoSwitch(),
-      onLongPressEnd: (_) => _resumeAutoSwitch(),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Bilder horizontal swipen
-          PageView.builder(
-            controller: _pageController,
-            itemCount: widget.article.imageUrls.length,
-            itemBuilder: (context, index) {
-              return Image.network(
-                widget.article.imageUrls[index],
-                fit: BoxFit.cover,
-                loadingBuilder: (c, child, progress) {
-                  if (progress == null) return child;
-                  return const Center(child: CircularProgressIndicator());
-                },
-              );
-            },
-            onPageChanged: (_) => _startAutoSwitch(),
+    return Column(
+      children: [
+        GestureDetector(
+          onLongPressStart: (_) => setState(() => _isHolding = true),
+          onLongPressEnd: (_) => setState(() => _isHolding = false),
+          onTapUp: (details) => _onTapZone(
+            details,
+            context.size != null
+                ? BoxConstraints.tight(context.size!)
+                : const BoxConstraints(),
           ),
-
-          // Progress‑Balken unten unter dem Titel
-          Positioned(
-            bottom: 20,
-            left: 16,
-            right: 16,
-            child: Row(
-              children: List.generate(widget.article.imageUrls.length, (i) {
-                // Berechne den Fortschritt für Balken i
-                final value = currentPage >= (i + 1)
-                    ? 1.0
-                    : (currentPage - i).clamp(0.0, 1.0) as double;
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: LinearProgressIndicator(
-                      value: value,
-                      backgroundColor: Colors.white24,
-                      valueColor: const AlwaysStoppedAnimation(Colors.white),
-                    ),
-                  ),
+          child: SizedBox(
+            height: 300,
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: widget.article.imageUrls.length,
+              itemBuilder: (context, index) {
+                return Image.network(
+                  widget.article.imageUrls[index],
+                  fit: BoxFit.cover,
+                  width: double.infinity,
                 );
-              }),
+              },
+              onPageChanged: (index) => _currentPage = index,
             ),
           ),
-
-          // Titel + Subtitle
-          Positioned(
-            bottom: 60,
-            left: 16,
-            right: 16,
+        ),
+        GestureDetector(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ArticlePage(article: widget.article),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Subtitle nur beim ersten Bild
-                if (currentPage < 1 && widget.article.subtitle.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text(
-                      widget.article.subtitle,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-
                 Text(
                   widget.article.title,
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
+                ),
+                Text(
+                  widget.article.subtitle,
+                  style: const TextStyle(color: Colors.grey),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
