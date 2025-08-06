@@ -14,6 +14,7 @@ const articles_module_1 = require("./articles/articles.module");
 const categories_module_1 = require("./categories/categories.module");
 const auth_module_1 = require("./auth/auth.module");
 const users_module_1 = require("./users/users.module");
+const drafts_module_1 = require("./drafts/drafts.module");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 let AppModule = class AppModule {
@@ -22,15 +23,13 @@ exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            config_1.ConfigModule.forRoot({
-                isGlobal: true,
-                envFilePath: '.env',
-            }),
+            config_1.ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
             prisma_module_1.PrismaModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             articles_module_1.ArticlesModule,
             categories_module_1.CategoriesModule,
+            drafts_module_1.DraftsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

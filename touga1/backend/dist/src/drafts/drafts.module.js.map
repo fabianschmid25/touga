@@ -1,0 +1,1 @@
+{"version":3,"file":"drafts.module.js","sourceRoot":"","sources":["../../../src/drafts/drafts.module.ts"],"names":[],"mappings":";;;;;;;;;AAAA,2CAAwC;AACxC,qDAAiD;AACjD,2DAAuD;AACvD,6DAAyD;AAMlD,IAAM,YAAY,GAAlB,MAAM,YAAY;CAAI,CAAA;AAAhB,oCAAY;uBAAZ,YAAY;IAJxB,IAAA,eAAM,EAAC;QACJ,WAAW,EAAE,CAAC,oCAAgB,CAAC;QAC/B,SAAS,EAAE,CAAC,8BAAa,EAAE,8BAAa,CAAC;KAC5C,CAAC;GACW,YAAY,CAAI"}
