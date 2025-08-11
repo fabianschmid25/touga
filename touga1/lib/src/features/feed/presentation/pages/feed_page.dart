@@ -36,28 +36,21 @@ class _FeedPageState extends ConsumerState<FeedPage> {
     final feedState = ref.watch(feedControllerProvider);
 
     return Scaffold(
+      // Das Schwarz als Fallback beibehalten oder entfernen, je nach Geschmack:
       backgroundColor: Colors.black,
-      body: Column(
-        children: [
-          SafeArea(
-            child: CategoriesBar(
-              selectedIndex: _selectedCategory,
-              onCategorySelected: (i) {
-                setState(() => _selectedCategory = i);
-                // TODO: In Zukunft Feed nach Kategorie filtern
-              },
-            ),
-          ),
-          Expanded(
-            child: feedState.when(
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // 1) Der Feed selbst
+            feedState.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
                 child: Text(
-                  'Fehler: \$e',
+                  'Fehler: $e',
                   style: const TextStyle(color: Colors.white),
                 ),
               ),
-              data: (List<Article> articles) {
+              data: (articles) {
                 if (articles.isEmpty) {
                   return const Center(
                     child: Text(
@@ -66,7 +59,6 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                     ),
                   );
                 }
-
                 return PageView.builder(
                   controller: _verticalController,
                   scrollDirection: Axis.vertical,
@@ -85,8 +77,22 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                 );
               },
             ),
-          ),
-        ],
+
+            // 2) und darüber – ganz oben – die transparente CategoriesBar
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: CategoriesBar(
+                selectedIndex: _selectedCategory,
+                onCategorySelected: (i) {
+                  setState(() => _selectedCategory = i);
+                  // TODO: Feed nach Kategorie filtern
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
