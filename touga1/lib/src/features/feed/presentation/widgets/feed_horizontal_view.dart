@@ -41,14 +41,15 @@ class _FeedHorizontalViewState extends State<FeedHorizontalView> {
 
   @override
   Widget build(BuildContext context) {
-    // ← Hier der bestehende Debug-Print bleibt erhalten:
+    // Debug bleibt bestehen
+    // ignore: avoid_print
     print('▶️ [FeedHorizontalView] imageUrls: ${widget.article.imageUrls}');
 
     final urls = widget.article.imageUrls;
 
     return Stack(
       children: [
-        // PageView mit Swipe-Logik bleibt unverändert
+        // 1) Der Content (Bilder im PageView)
         PageView.builder(
           controller: _pageController,
           itemCount: urls.length,
@@ -71,7 +72,51 @@ class _FeedHorizontalViewState extends State<FeedHorizontalView> {
           ),
         ),
 
-        // Titel, Subtitle und Indikatoren
+        // 2) TikTok-typische Edge-Scrims (oben & unten) für bessere Lesbarkeit
+        //    Liegen über dem Video, aber unter deinen Texten/Buttons.
+        Positioned.fill(
+          child: IgnorePointer(
+            child: Column(
+              children: [
+                // TOP-SCRIM (für Status-Icons / Kategorien)
+                Container(
+                  height: 110,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.60),
+                        Colors.black.withOpacity(0.25),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.5, 1.0],
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                // BOTTOM-SCRIM (für Titel / Untertitel / ActionBar)
+                Container(
+                  height: 160,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.70),
+                        Colors.black.withOpacity(0.25),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.45, 1.0],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // 3) Titel, Subtitle und Indikatoren
         Positioned(
           bottom: 16,
           left: 16,
@@ -86,6 +131,12 @@ class _FeedHorizontalViewState extends State<FeedHorizontalView> {
                     color: Colors.white70,
                     fontSize: 14,
                     fontStyle: FontStyle.italic,
+                    shadows: [
+                      Shadow(
+                          blurRadius: 4,
+                          color: Colors.black54,
+                          offset: Offset(0, 1)),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -96,26 +147,22 @@ class _FeedHorizontalViewState extends State<FeedHorizontalView> {
                     builder: (_) => ArticlePage(article: widget.article),
                   ),
                 ),
-                child: Text(
-                  widget.article.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    shadows: [Shadow(blurRadius: 4, color: Colors.black54)],
-                  ),
-                ),
+                child: const _ArticleTitle(),
               ),
               const SizedBox(height: 8),
 
-              // Statische Indikator-Balken ohne Autoplay
+              // Statische Indikator-Balken (kein Autoplay)
               Row(
                 children: List.generate(urls.length, (i) {
+                  final active = i <= _current;
                   return Expanded(
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       height: 4,
-                      color: i <= _current ? Colors.white : Colors.white38,
+                      decoration: BoxDecoration(
+                        color: active ? Colors.white : Colors.white38,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   );
                 }),
@@ -124,7 +171,7 @@ class _FeedHorizontalViewState extends State<FeedHorizontalView> {
           ),
         ),
 
-        // ActionBar bleibt unverändert
+        // 4) ActionBar
         Positioned(
           right: 16,
           bottom: 120,
@@ -144,6 +191,30 @@ class _FeedHorizontalViewState extends State<FeedHorizontalView> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Separater Titel-Widget mit starkem Shadow, damit es auf hellem Hintergrund gut lesbar ist.
+class _ArticleTitle extends StatelessWidget {
+  const _ArticleTitle();
+
+  @override
+  Widget build(BuildContext context) {
+    final article =
+        (context.findAncestorStateOfType<_FeedHorizontalViewState>())!
+            .widget
+            .article;
+    return Text(
+      article.title,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 28,
+        fontWeight: FontWeight.bold,
+        shadows: [
+          Shadow(blurRadius: 8, color: Colors.black54, offset: Offset(0, 2)),
+        ],
+      ),
     );
   }
 }
