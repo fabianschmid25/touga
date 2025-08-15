@@ -6,7 +6,7 @@ import 'package:touga1/src/features/add/presentation/pages/add_page.dart';
 import 'package:touga1/src/features/inbox/presentation/pages/inbox_page.dart';
 import 'package:touga1/src/features/profile/presentation/pages/profile_page.dart';
 
-/// Basis‑Scaffold mit BottomNavigationBar
+/// Basis-Scaffold mit BottomNavigationBar (weiß, icon-only)
 class AppScaffold extends ConsumerStatefulWidget {
   const AppScaffold({Key? key}) : super(key: key);
 
@@ -17,7 +17,7 @@ class AppScaffold extends ConsumerStatefulWidget {
 class _AppScaffoldState extends ConsumerState<AppScaffold> {
   int _currentIndex = 0;
 
-  static const _tabs = <Widget>[
+  final _tabs = const [
     FeedPage(),
     SearchPage(),
     AddPage(),
@@ -29,43 +29,31 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _tabs[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.black,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white54,
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        onTap: (i) => setState(() => _currentIndex = i),
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Suche'),
-          BottomNavigationBarItem(
-            icon: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.red, Colors.blue],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.add, color: Colors.white),
-            ),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.mail_outline),
-            label: 'Posteingang',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profil',
-          ),
-        ],
+
+      // zarte obere Hairline via DecoratedBox
+      bottomNavigationBar: DecoratedBox(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: Color(0xFFE5E7EB), width: 1)),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (i) => setState(() => _currentIndex = i),
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          showSelectedLabels: false,
+          showUnselectedLabels: false,
+          selectedItemColor: const Color(0xFF111827),
+          unselectedItemColor: const Color(0xFF64748B),
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: ''),
+            BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.add_circle_outline), label: ''),
+            BottomNavigationBarItem(icon: Icon(Icons.mail_outline), label: ''),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline), label: ''),
+          ],
+        ),
       ),
     );
   }
