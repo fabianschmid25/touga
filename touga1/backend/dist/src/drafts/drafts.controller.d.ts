@@ -8,31 +8,31 @@ export declare class DraftsController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        title: string;
-        subtitle: string | null;
-        content: import("@prisma/client/runtime/library").JsonValue;
+        deletedAt: Date | null;
         authorId: string;
+        title: string | null;
         images: string[];
+        contentHtml: string | null;
     }>;
     findOne(req: any, id: string): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        title: string;
-        subtitle: string | null;
-        content: import("@prisma/client/runtime/library").JsonValue;
+        deletedAt: Date | null;
         authorId: string;
+        title: string | null;
         images: string[];
+        contentHtml: string | null;
     }>;
     update(req: any, id: string, dto: UpdateDraftDto): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        title: string;
-        subtitle: string | null;
-        content: import("@prisma/client/runtime/library").JsonValue;
+        deletedAt: Date | null;
         authorId: string;
+        title: string | null;
         images: string[];
+        contentHtml: string | null;
     }>;
     remove(req: any, id: string): Promise<{
         deleted: boolean;
@@ -42,10 +42,11 @@ export declare class DraftsController {
         createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
-        title: string;
-        subtitle: string | null;
-        content: string;
-        viewCount: number;
         authorId: string;
+        title: string;
+        content: string | null;
+        excerpt: string | null;
+        template: import(".prisma/client").$Enums.ArticleTemplate | null;
+        publishedAt: Date | null;
     }>;
 }

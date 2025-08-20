@@ -11,10 +11,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateArticleDto = void 0;
 const class_validator_1 = require("class-validator");
+const client_1 = require("@prisma/client");
 class CreateArticleDto {
     title;
-    subtitle;
     content;
+    excerpt;
+    template;
     imageUrls;
     categoryIds;
 }
@@ -28,12 +30,17 @@ __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], CreateArticleDto.prototype, "subtitle", void 0);
+], CreateArticleDto.prototype, "content", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], CreateArticleDto.prototype, "content", void 0);
+], CreateArticleDto.prototype, "excerpt", void 0);
+__decorate([
+    (0, class_validator_1.IsEnum)(client_1.ArticleTemplate),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateArticleDto.prototype, "template", void 0);
 __decorate([
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ArrayNotEmpty)(),
