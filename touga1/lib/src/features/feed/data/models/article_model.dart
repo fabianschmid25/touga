@@ -1,5 +1,18 @@
 import '../../domain/entities/article.dart';
 
+ArticleTemplate? _parseTemplateModel(String? value) {
+  switch (value) {
+    case 'FULL_9_16':
+      return ArticleTemplate.full916;
+    case 'CARD_3_4':
+      return ArticleTemplate.card34;
+    case 'STORY_4_3':
+      return ArticleTemplate.story43;
+    default:
+      return null;
+  }
+}
+
 class ArticleModel {
   final String id;
   final String title;
@@ -8,6 +21,7 @@ class ArticleModel {
   final List<String> imageUrls;
   final String authorId;
   final DateTime createdAt;
+  final ArticleTemplate? template;
 
   ArticleModel({
     required this.id,
@@ -17,6 +31,7 @@ class ArticleModel {
     required this.imageUrls,
     required this.authorId,
     required this.createdAt,
+    this.template,
   });
 
   factory ArticleModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +44,7 @@ class ArticleModel {
           (json['imageUrls'] as List?)?.map((e) => e.toString()).toList() ?? [],
       authorId: json['authorId'] as String,
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+      template: _parseTemplateModel(json['template'] as String?),
     );
   }
 
@@ -41,6 +57,7 @@ class ArticleModel {
       imageUrls: imageUrls,
       authorId: authorId,
       createdAt: createdAt,
+      template: template,
     );
   }
 }

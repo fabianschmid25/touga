@@ -3,6 +3,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../domain/entities/article.dart';
 import '../pages/article_page.dart';
+import 'common/headline.dart';
+import 'common/meta_line.dart';
 
 /// Eine ganze "Seite" im Magazin-Look (wie das Beispielbild):
 /// - Vollseite mit weißem Hintergrund, aber Inhalt als Card-Layout
@@ -56,23 +58,20 @@ class _FeedCardV2State extends State<FeedCardV2> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size; // Seite = Bildschirm
-    final author = (widget.authorName ?? 'Max Meyer').toUpperCase();
-    final cats = (widget.categories ?? const ['Aktuelles', 'Reisen', 'Wandern'])
-        .take(3)
-        .map((e) => e.toUpperCase())
-        .toList();
-    final meta = cats.isNotEmpty ? '$author / ${cats.join(' / ')}' : author;
 
     final title = widget.article.title;
     final excerptLines = _titleBucket(title);
+
+    final template = widget.article.template; // steuert Layout-Variante
 
     // Bildhöhe so wählen, dass es "wie im Beispiel" wirkt:
     // ~ obere 60% Bild, unten Textblock
     final imageHeight = (size.height * 0.58).clamp(360.0, 640.0);
 
-    return SizedBox(
+    return Container(
       width: size.width,
       height: size.height,
+      color: Colors.white,
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -81,97 +80,28 @@ class _FeedCardV2State extends State<FeedCardV2> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ===== Großes Bild mit runden Ecken, Cover, Indikatoren im Bild ===
-              SizedBox(
-                height: imageHeight,
-                width: double.infinity,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      if (_images.isNotEmpty)
-                        PageView.builder(
-                          itemCount: _images.length,
-                          onPageChanged: (i) => setState(() => _current = i),
-                          itemBuilder: (_, i) => CachedNetworkImage(
-                            imageUrl: _images[i],
-                            fit: BoxFit
-                                .cover, // wie im Beispiel: füllt den Bildrahmen
-                            placeholder: (_, __) => const Center(
-                              child: SizedBox(
-                                width: 24,
-                                height: 24,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                            ),
-                            errorWidget: (_, __, ___) => const Center(
-                              child: Icon(Icons.broken_image_outlined,
-                                  size: 36, color: Colors.black38),
-                            ),
-                          ),
-                        )
-                      else
-                        Container(color: const Color(0xFFE5E7EB)),
-
-                      // Indikatoren: dezent, im Bild unten, mittig
-                      if (_images.length > 1)
-                        Positioned(
-                          bottom: 12,
-                          left: 0,
-                          right: 0,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(_images.length, (i) {
-                              final active = i == _current;
-                              return AnimatedContainer(
-                                duration: const Duration(milliseconds: 180),
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 4),
-                                height: 4,
-                                width: active ? 28 : 14,
-                                decoration: BoxDecoration(
-                                  color: Colors.white
-                                      .withOpacity(active ? 1.0 : 0.7),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                              );
-                            }),
-                          ),
-                        ),
-
-                      // Tap auf Bild -> Artikel öffnen
-                      Positioned.fill(
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      ArticlePage(article: widget.article),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _TemplateImageArea(
+                template: template,
+                imageHeight: imageHeight,
+                images: _images,
+                currentIndex: _current,
+                onPageChanged: (i) => setState(() => _current = i),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ArticlePage(article: widget.article),
+                    ),
+                  );
+                },
               ),
 
               const SizedBox(height: 20),
 
               // ===== Meta-Zeile =================================================
-              Text(
-                meta,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  letterSpacing: 1.0,
-                  color: Color(0xFF475569),
-                  fontWeight: FontWeight.w700,
-                ),
+              MetaLine(
+                author: widget.authorName ?? 'Max Meyer',
+                categories: widget.categories ??
+                    const ['Aktuelles', 'Reisen', 'Wandern'],
               ),
 
               const SizedBox(height: 12),
@@ -184,17 +114,7 @@ class _FeedCardV2State extends State<FeedCardV2> {
                         builder: (_) => ArticlePage(article: widget.article)),
                   );
                 },
-                child: Text(
-                  title,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF0F172A),
-                    fontSize: 28, // größer, wie im Beispiel
-                    height: 1.12,
-                    fontWeight: FontWeight.w800, // markant
-                  ),
-                ),
+                child: Headline(text: title),
               ),
 
               const SizedBox(height: 10),
@@ -217,6 +137,129 @@ class _FeedCardV2State extends State<FeedCardV2> {
               const Spacer(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TemplateImageArea extends StatelessWidget {
+  final ArticleTemplate? template;
+  final double imageHeight;
+  final List<String> images;
+  final int currentIndex;
+  final ValueChanged<int> onPageChanged;
+  final VoidCallback onTap;
+
+  const _TemplateImageArea({
+    required this.template,
+    required this.imageHeight,
+    required this.images,
+    required this.currentIndex,
+    required this.onPageChanged,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final borderRadius = BorderRadius.circular(12);
+
+    Widget imageContent = images.isNotEmpty
+        ? PageView.builder(
+            itemCount: images.length,
+            onPageChanged: onPageChanged,
+            itemBuilder: (_, i) => CachedNetworkImage(
+              imageUrl: images[i],
+              fit: BoxFit.cover,
+              placeholder: (_, __) => const Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+              errorWidget: (_, __, ___) => const Center(
+                child: Icon(Icons.broken_image_outlined,
+                    size: 36, color: Colors.black38),
+              ),
+            ),
+          )
+        : Container(color: const Color(0xFFE5E7EB));
+
+    // Indikatoren unten im Bild
+    Widget indicators = Positioned(
+      bottom: 12,
+      left: 0,
+      right: 0,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(images.length, (i) {
+          final active = i == currentIndex;
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            height: 4,
+            width: active ? 28 : 14,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(active ? 1.0 : 0.7),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          );
+        }),
+      ),
+    );
+
+    // Tap Overlay
+    Widget tapOverlay = Positioned.fill(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(onTap: onTap),
+      ),
+    );
+
+    // CARD/STORY: fester Bereich mit Seitenverhältnissen 3:4 oder 4:3
+    if (template == ArticleTemplate.card34 ||
+        template == ArticleTemplate.story43 ||
+        template == null) {
+      final aspectRatio = template == ArticleTemplate.story43 ? 4 / 3 : 3 / 4;
+      return Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: imageHeight,
+            maxWidth: 1000,
+          ),
+          child: AspectRatio(
+            aspectRatio: aspectRatio,
+            child: ClipRRect(
+              borderRadius: borderRadius,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  imageContent,
+                  if (images.length > 1) indicators,
+                  tapOverlay,
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Fallback (sollte hier nicht landen, FULL_9_16 nutzt eigenes Widget in FeedPage)
+    return SizedBox(
+      height: imageHeight,
+      width: double.infinity,
+      child: ClipRRect(
+        borderRadius: borderRadius,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            imageContent,
+            if (images.length > 1) indicators,
+            tapOverlay,
+          ],
         ),
       ),
     );

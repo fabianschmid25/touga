@@ -1,3 +1,18 @@
+enum ArticleTemplate { full916, card34, story43 }
+
+ArticleTemplate? _parseTemplate(String? value) {
+  switch (value) {
+    case 'FULL_9_16':
+      return ArticleTemplate.full916;
+    case 'CARD_3_4':
+      return ArticleTemplate.card34;
+    case 'STORY_4_3':
+      return ArticleTemplate.story43;
+    default:
+      return null;
+  }
+}
+
 class Article {
   final String id;
   final String title;
@@ -6,6 +21,7 @@ class Article {
   final List<String> imageUrls;
   final String authorId;
   final DateTime createdAt;
+  final ArticleTemplate? template;
 
   Article({
     required this.id,
@@ -15,6 +31,7 @@ class Article {
     required this.imageUrls,
     required this.authorId,
     required this.createdAt,
+    this.template,
   });
 
   factory Article.fromJson(Map<String, dynamic> json) {
@@ -28,6 +45,7 @@ class Article {
           .toList(),
       authorId: json['authorId'] as String,
       createdAt: DateTime.parse(json['createdAt']),
+      template: _parseTemplate(json['template'] as String?),
     );
   }
 }

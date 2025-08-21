@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
 import '../../domain/entities/article.dart';
-import '../widgets/feed_card_v2.dart';
+import '../templates/feed_template_renderer.dart';
 
 class FeedPage extends ConsumerStatefulWidget {
   const FeedPage({Key? key}) : super(key: key);
@@ -58,12 +58,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
             itemCount: articles.length,
             itemBuilder: (context, index) {
               final Article a = articles[index];
-              return FeedCardV2(
-                article: a,
-                // Dummy-Daten bis Backend liefert
-                authorName: 'Max Meyer',
-                categories: const ['Aktuelles', 'Reisen', 'Wandern'],
-              );
+              return FeedTemplateRegistry.of(a).build(context, a);
             },
           );
         },
