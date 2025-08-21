@@ -1,5 +1,5 @@
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, ArticleTemplate, Role } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcrypt';
 
@@ -72,6 +72,7 @@ async function main() {
                 id: uuidv4(),
                 title: `Artikel ${i}`,
                 subtitle: `Untertitel ${i}`,
+                template: ArticleTemplate.STORY_4_3,
                 content: `Dies ist der Inhalt von Artikel ${i}.`,
                 authorId: author.id,
                 viewCount: i * 10,

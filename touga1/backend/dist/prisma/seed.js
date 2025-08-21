@@ -60,6 +60,7 @@ async function main() {
                 id: (0, uuid_1.v4)(),
                 title: `Artikel ${i}`,
                 subtitle: `Untertitel ${i}`,
+                template: client_1.ArticleTemplate.STORY_4_3,
                 content: `Dies ist der Inhalt von Artikel ${i}.`,
                 authorId: author.id,
                 viewCount: i * 10,

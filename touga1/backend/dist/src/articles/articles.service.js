@@ -50,6 +50,7 @@ let ArticlesService = class ArticlesService {
             content: dto.content,
             author: { connect: { id: authorId } },
             images: { create: imagesCreate },
+            template: dto.template ?? null,
             categories: dto.categoryIds
                 ? { connect: dto.categoryIds.map(id => ({ id })) }
                 : undefined,

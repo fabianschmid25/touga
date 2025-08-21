@@ -14,6 +14,13 @@ enum Role {
   ADMIN
 }
 
+enum ArticleTemplate {
+  FULL_9_16
+  CARD_3_4
+  STORY_4_3
+}
+
+
 model User {
   id             String         @id @default(cuid())
   email          String         @unique
@@ -51,6 +58,7 @@ model Draft {
   authorId     String
   title        String
   subtitle     String?
+  template    ArticleTemplate? // Which Feed Designe
   contentHtml  String   // HTML-Inhalt aus dem WYSIWYG-Editor
   images       String[] // Array von Bild-URLs
   createdAt    DateTime @default(now())
@@ -71,7 +79,7 @@ model Article {
 
   author       User         @relation(fields: [authorId], references: [id])
   authorId     String
-
+  template    ArticleTemplate? // Which Feed Designe
   images       Image[]
   comments     Comment[]
   likes        Like[]

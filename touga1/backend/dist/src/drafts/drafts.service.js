@@ -23,7 +23,8 @@ let DraftsService = class DraftsService {
                 authorId: userId,
                 title: dto.title,
                 subtitle: dto.subtitle,
-                content: dto.contentHtml,
+                template: dto.template ?? null,
+                contentHtml: dto.contentHtml,
                 images: dto.images,
             },
         });
@@ -51,6 +52,8 @@ let DraftsService = class DraftsService {
             data.content = dto.contentHtml;
         if (dto.images !== undefined)
             data.images = dto.images;
+        if (dto.template !== undefined)
+            data.template = dto.template;
         return this.prisma.draft.update({
             where: { id: draftId },
             data,
@@ -74,7 +77,8 @@ let DraftsService = class DraftsService {
                 authorId: userId,
                 title: draft.title,
                 subtitle: draft.subtitle,
-                content: draft.content,
+                content: draft.contentHtml,
+                template: draft.template ?? null,
                 images: {
                     create: draft.images.map((url, index) => ({
                         url,

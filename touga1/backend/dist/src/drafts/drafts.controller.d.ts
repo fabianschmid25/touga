@@ -10,9 +10,10 @@ export declare class DraftsController {
         updatedAt: Date;
         title: string;
         subtitle: string | null;
-        content: import("@prisma/client/runtime/library").JsonValue;
         authorId: string;
+        template: import(".prisma/client").$Enums.ArticleTemplate | null;
         images: string[];
+        contentHtml: string;
     }>;
     findOne(req: any, id: string): Promise<{
         id: string;
@@ -20,9 +21,10 @@ export declare class DraftsController {
         updatedAt: Date;
         title: string;
         subtitle: string | null;
-        content: import("@prisma/client/runtime/library").JsonValue;
         authorId: string;
+        template: import(".prisma/client").$Enums.ArticleTemplate | null;
         images: string[];
+        contentHtml: string;
     }>;
     update(req: any, id: string, dto: UpdateDraftDto): Promise<{
         id: string;
@@ -30,9 +32,10 @@ export declare class DraftsController {
         updatedAt: Date;
         title: string;
         subtitle: string | null;
-        content: import("@prisma/client/runtime/library").JsonValue;
         authorId: string;
+        template: import(".prisma/client").$Enums.ArticleTemplate | null;
         images: string[];
+        contentHtml: string;
     }>;
     remove(req: any, id: string): Promise<{
         deleted: boolean;
@@ -47,5 +50,6 @@ export declare class DraftsController {
         content: string;
         viewCount: number;
         authorId: string;
+        template: import(".prisma/client").$Enums.ArticleTemplate | null;
     }>;
 }

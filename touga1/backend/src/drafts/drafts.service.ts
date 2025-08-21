@@ -16,7 +16,8 @@ export class DraftsService {
                 authorId: userId,
                 title: dto.title,
                 subtitle: dto.subtitle,
-                content: dto.contentHtml,  // Mapping von contentHtml auf das JSON-Feld
+                template: dto.template ?? null,
+                contentHtml: dto.contentHtml,  // Mapping von contentHtml auf das JSON-Feld
                 images: dto.images,        // Array von Bild-URLs
             },
         });
@@ -45,7 +46,7 @@ export class DraftsService {
         if (dto.subtitle !== undefined) data.subtitle = dto.subtitle;
         if (dto.contentHtml !== undefined) data.content = dto.contentHtml; // Mapping
         if (dto.images !== undefined) data.images = dto.images;
-
+        if (dto.template !== undefined) data.template = dto.template;
         return this.prisma.draft.update({
             where: { id: draftId },
             data,
@@ -74,7 +75,8 @@ export class DraftsService {
                 authorId: userId,
                 title: draft.title,
                 subtitle: draft.subtitle,
-                content: draft.content as string,  // Cast auf String, um Prisma-Typ zu erfüllen
+                content: draft.contentHtml as string,  // Cast auf String, um Prisma-Typ zu erfüllen
+                template: draft.template ?? null,
                 images: {
                     create: draft.images.map((url, index) => ({
                         url,

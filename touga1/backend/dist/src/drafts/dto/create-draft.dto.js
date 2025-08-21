@@ -11,10 +11,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateDraftDto = void 0;
 const class_validator_1 = require("class-validator");
+const client_1 = require("@prisma/client");
 class CreateDraftDto {
     title;
     subtitle;
     contentHtml;
+    template;
     images;
 }
 exports.CreateDraftDto = CreateDraftDto;
@@ -31,6 +33,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateDraftDto.prototype, "contentHtml", void 0);
+__decorate([
+    (0, class_validator_1.IsEnum)(client_1.ArticleTemplate),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateDraftDto.prototype, "template", void 0);
 __decorate([
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsUrl)({}, { each: true }),
