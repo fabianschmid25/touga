@@ -22,6 +22,8 @@ class ArticleModel {
   final String authorId;
   final DateTime createdAt;
   final ArticleTemplate? template;
+  final ArticleAuthor? author;
+  final List<ArticleCategory> categories;
 
   ArticleModel({
     required this.id,
@@ -32,6 +34,8 @@ class ArticleModel {
     required this.authorId,
     required this.createdAt,
     this.template,
+    this.author,
+    this.categories = const [],
   });
 
   factory ArticleModel.fromJson(Map<String, dynamic> json) {
@@ -45,6 +49,14 @@ class ArticleModel {
       authorId: json['authorId'] as String,
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       template: _parseTemplateModel(json['template'] as String?),
+      author: json['author'] != null
+          ? ArticleAuthor.fromJson(json['author'] as Map<String, dynamic>)
+          : null,
+      categories: (json['categories'] as List<dynamic>?)
+              ?.map((cat) =>
+                  ArticleCategory.fromJson(cat as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 
@@ -58,6 +70,8 @@ class ArticleModel {
       authorId: authorId,
       createdAt: createdAt,
       template: template,
+      author: author,
+      categories: categories,
     );
   }
 }

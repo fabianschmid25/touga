@@ -43,6 +43,18 @@ class _Card34ViewState extends State<Card34View> {
         widget.categories ?? const ['Aktuelles', 'Reisen', 'Wandern'];
 
     final headlineText = widget.article.title.toUpperCase();
+    final int titleLen = headlineText.length;
+    final int imageFlex = titleLen > 80
+        ? 50
+        : titleLen > 55
+            ? 54
+            : 56;
+    final int bottomFlex = titleLen > 80
+        ? 6
+        : titleLen > 55
+            ? 8
+            : 12;
+    final int headlineMaxLines = titleLen > 70 ? 4 : 3;
 
     return Container(
       width: size.width,
@@ -53,12 +65,12 @@ class _Card34ViewState extends State<Card34View> {
         child: Stack(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    flex: 56,
+                    flex: imageFlex,
                     child: SizedBox.expand(
                       child: MediaArea(
                         images: widget.article.imageUrls,
@@ -79,6 +91,7 @@ class _Card34ViewState extends State<Card34View> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  // Meta-Zeile mit Wrap (automatisch responsive)
                   MetaLinePills(author: displayAuthor, categories: displayCats),
                   const SizedBox(height: 16),
                   GestureDetector(
@@ -97,10 +110,10 @@ class _Card34ViewState extends State<Card34View> {
                         height: 1.25,
                         fontWeight: FontWeight.w800,
                       ),
-                      maxLines: 3,
+                      maxLines: headlineMaxLines,
                     ),
                   ),
-                  Expanded(flex: 15, child: SizedBox()),
+                  Expanded(flex: bottomFlex, child: SizedBox()),
                 ],
               ),
             ),

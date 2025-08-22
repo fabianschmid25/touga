@@ -23,6 +23,13 @@ let ArticlesService = class ArticlesService {
             include: {
                 images: true,
                 categories: true,
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    }
+                },
             },
             orderBy: { createdAt: 'desc' },
         });
@@ -33,6 +40,13 @@ let ArticlesService = class ArticlesService {
             include: {
                 images: true,
                 categories: true,
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    }
+                },
             },
         });
         if (!article)
@@ -60,6 +74,13 @@ let ArticlesService = class ArticlesService {
             include: {
                 images: true,
                 categories: true,
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    }
+                },
             },
         });
     }

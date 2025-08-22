@@ -15,6 +15,13 @@ export class ArticlesService {
             include: {
                 images: true,
                 categories: true,
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    }
+                },
             },
             orderBy: { createdAt: 'desc' },
         });
@@ -27,6 +34,13 @@ export class ArticlesService {
             include: {
                 images: true,
                 categories: true,
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    }
+                },
             },
         });
         if (!article) throw new NotFoundException(`Article ${id} not found`);
@@ -60,6 +74,13 @@ export class ArticlesService {
             include: {
                 images: true,
                 categories: true,
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    }
+                },
             },
         });
     }
