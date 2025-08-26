@@ -17,11 +17,13 @@ class ArticleAuthor {
   final String id;
   final String? name;
   final String email;
+  final String? avatarUrl;
 
   ArticleAuthor({
     required this.id,
     this.name,
     required this.email,
+    this.avatarUrl,
   });
 
   factory ArticleAuthor.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class ArticleAuthor {
       id: json['id'] as String,
       name: json['name'] as String?,
       email: json['email'] as String,
+      avatarUrl: json['avatarUrl'] as String?,
     );
   }
 }

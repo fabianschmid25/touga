@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class MetaLinePills extends StatelessWidget {
   final String author;
   final List<String> categories;
+  final String? authorAvatarUrl;
 
   const MetaLinePills({
     super.key,
     required this.author,
     required this.categories,
+    this.authorAvatarUrl,
   });
 
   @override
@@ -15,7 +18,52 @@ class MetaLinePills extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Autor links, ellipsiert
+        // Profilbild des Autors
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.grey[300]!,
+              width: 1,
+            ),
+          ),
+          child: ClipOval(
+            child: authorAvatarUrl != null && authorAvatarUrl!.isNotEmpty
+                ? CachedNetworkImage(
+                    imageUrl: authorAvatarUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      color: Colors.grey[200],
+                      child: Icon(
+                        Icons.person,
+                        size: 14,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: Colors.grey[200],
+                      child: Icon(
+                        Icons.person,
+                        size: 14,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                  )
+                : Container(
+                    color: Colors.grey[200],
+                    child: Icon(
+                      Icons.person,
+                      size: 14,
+                      color: Colors.grey[400],
+                    ),
+                  ),
+          ),
+        ),
+        const SizedBox(width: 8),
+
+        // Autor mit kreativer Schriftart
         Flexible(
           fit: FlexFit.loose,
           child: Text(
@@ -23,14 +71,17 @@ class MetaLinePills extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
             style: TextStyle(
-              color: Colors.grey[700],
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-              letterSpacing: 0.5,
+              color: const Color(0xFF1F2937),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+              fontFamily:
+                  'SF Pro Display', // Moderne Schriftart (falls verfügbar)
             ),
           ),
         ),
         const SizedBox(width: 8),
+
         // Kategorien rechts, einzeilig, abgeschnitten falls kein Platz
         Expanded(
           child: LayoutBuilder(
@@ -39,37 +90,37 @@ class MetaLinePills extends StatelessWidget {
               const double pillHPadding = 8;
               const double pillBorder = 1;
               const double spacing = 8;
-              final double tolerance =
-                  2.0; // Kleinerer Toleranzwert für präzisere Berechnung
+              final double tolerance = 2.0;
 
               const TextStyle pillStyle = TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
                 color: Colors.black,
-                letterSpacing: 0.5,
+                letterSpacing: 0.8,
+                fontFamily: 'SF Pro Display',
               );
 
-              // Berechne die Breite des Autors, um den verfügbaren Platz für Kategorien zu bestimmen
+              // Berechne die Breite des Autors (inkl. Profilbild)
               final authorTextPainter = TextPainter(
                 text: TextSpan(
                   text: author,
                   style: TextStyle(
-                    color: Colors.grey[700],
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: 0.5,
+                    color: const Color(0xFF1F2937),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
                   ),
                 ),
                 textDirection: TextDirection.ltr,
                 maxLines: 1,
               )..layout();
 
-              // Verfügbare Breite für Kategorien (abzüglich Autor + Spacing)
-              final double availableWidth =
-                  maxWidth - authorTextPainter.width - 8;
+              // Verfügbare Breite für Kategorien (abzüglich Autor + Profilbild + Spacing)
+              final double availableWidth = maxWidth -
+                  authorTextPainter.width -
+                  40; // 24 (Profilbild) + 16 (Spacing)
 
               if (availableWidth <= 0) {
-                // Kein Platz für Kategorien
                 return const SizedBox.shrink();
               }
 
@@ -91,7 +142,6 @@ class MetaLinePills extends StatelessWidget {
                     ? pillWidth
                     : usedWidth + spacing + pillWidth;
 
-                // Prüfe, ob die Pille in den verfügbaren Platz passt
                 if (nextWidth <= availableWidth + tolerance) {
                   if (usedWidth != 0) {
                     children.add(const SizedBox(width: spacing));
@@ -100,21 +150,22 @@ class MetaLinePills extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: pillHPadding,
-                        vertical: 4,
+                        vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        border:
-                            Border.all(color: Colors.black, width: pillBorder),
-                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xFFE5E7EB),
+                          width: pillBorder,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        color: const Color(0xFFF9FAFB),
                       ),
                       child: Text(label, style: pillStyle, maxLines: 1),
                     ),
                   );
                   usedWidth = nextWidth;
                 } else {
-                  // Versuche, die Pille zu kürzen, falls sie nur knapp nicht passt
                   if (i == 0 && pillWidth > availableWidth) {
-                    // Erste Pille ist zu breit - zeige sie gekürzt an
                     final shortenedLabel = _shortenText(
                         label,
                         availableWidth - (pillHPadding * 2) - (pillBorder * 2),
@@ -124,12 +175,15 @@ class MetaLinePills extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: pillHPadding,
-                            vertical: 4,
+                            vertical: 3,
                           ),
                           decoration: BoxDecoration(
                             border: Border.all(
-                                color: Colors.black, width: pillBorder),
-                            borderRadius: BorderRadius.circular(20),
+                              color: const Color(0xFFE5E7EB),
+                              width: pillBorder,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            color: const Color(0xFFF9FAFB),
                           ),
                           child: Text(shortenedLabel,
                               style: pillStyle, maxLines: 1),
@@ -137,7 +191,7 @@ class MetaLinePills extends StatelessWidget {
                       );
                     }
                   }
-                  break; // Keine weiteren Pillen
+                  break;
                 }
               }
 

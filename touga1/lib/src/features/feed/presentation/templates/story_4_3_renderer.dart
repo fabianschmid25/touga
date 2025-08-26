@@ -4,7 +4,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/entities/article.dart';
 import '../pages/article_page.dart';
 import '../widgets/common/headline.dart';
-import '../widgets/common/meta_line.dart';
+import '../widgets/common/meta_line_pills.dart';
+import '../widgets/common/action_bar.dart';
 import 'feed_template_renderer.dart';
 
 class Story43Renderer implements FeedTemplateRenderer {
@@ -13,76 +14,135 @@ class Story43Renderer implements FeedTemplateRenderer {
     final authorName =
         article.author?.name ?? article.author?.email ?? 'Unbekannter Autor';
     final categories = article.categories.map((c) => c.name).toList();
+    final authorAvatarUrl = article.author?.avatarUrl;
 
     return _Story43View(
       article: article,
       authorName: authorName,
       categories: categories,
+      authorAvatarUrl: authorAvatarUrl,
     );
   }
 }
 
-/// Eine ganze "Seite" im Magazin-Look (wie das Beispielbild):
-/// - Vollseite mit weißem Hintergrund, aber Inhalt als Card-Layout
-/// - Oben großes Bild (rounded, BoxFit.cover), optional bis zu 3 Bilder (horizontal swipen)
-/// - Bild-Indikatoren IM Bild, dezent
-/// - Darunter Meta-Zeile: "AUTOR / KAT1 / KAT2 / KAT3"
-/// - Sehr große Headline + optional kurzer Teaser
-/// - Kein eigener Scroll: Die Seite selbst wird im vertikalen PageView geswiped
+/// Story 4:3 Design - Card-Layout mit sauberer Struktur:
+/// - Weißer Hintergrund mit einheitlichem Padding
+/// - Bild oben (40% Höhe, volle Breite)
+/// - Meta-Zeile mit Author und Kategorien
+/// - Große Headline
+/// - Content-Teaser
+/// - Footer-Aktion Button
 class _Story43View extends StatefulWidget {
   final Article article;
-
-  // Dummy-Daten bis Backend liefert
   final String? authorName;
   final List<String>? categories;
+  final String? authorAvatarUrl;
 
   const _Story43View({
     Key? key,
     required this.article,
     this.authorName,
     this.categories,
+    this.authorAvatarUrl,
   }) : super(key: key);
 
   @override
   State<_Story43View> createState() => _Story43ViewState();
 }
 
-class _Story43ViewState extends State<_Story43View> {
+class _Story43ViewState extends State<_Story43View>
+    with TickerProviderStateMixin {
   int _current = 0;
+  bool _isActionBarExpanded = false;
+  late AnimationController _actionBarController;
+  late Animation<double> _actionBarAnimation;
 
-  List<String> get _images {
-    final urls = widget.article.imageUrls;
-    if (urls.isEmpty) return [];
-    return urls.take(3).toList();
+  @override
+  void initState() {
+    super.initState();
+    _actionBarController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _actionBarAnimation = CurvedAnimation(
+      parent: _actionBarController,
+      curve: Curves.easeInOut,
+    );
   }
 
-  String _excerptFromHtml(String html, {int maxChars = 220}) {
-    final noTags = html.replaceAll(RegExp(r'<[^>]*>'), ' ');
+  @override
+  void dispose() {
+    _actionBarController.dispose();
+    super.dispose();
+  }
+
+  String _extractTeaser(String content, {int maxChars = 200}) {
+    // HTML-Tags entfernen
+    final noTags = content.replaceAll(RegExp(r'<[^>]*>'), ' ');
     final text = noTags.replaceAll(RegExp(r'\s+'), ' ').trim();
-    return text.length <= maxChars
-        ? text
-        : '${text.substring(0, maxChars).trim()}…';
+
+    if (text.length <= maxChars) return text;
+
+    // Finde den letzten vollständigen Satz
+    final truncated = text.substring(0, maxChars);
+    final lastPeriod = truncated.lastIndexOf('.');
+    final lastExclamation = truncated.lastIndexOf('!');
+    final lastQuestion = truncated.lastIndexOf('?');
+
+    final lastSentenceEnd = [lastPeriod, lastExclamation, lastQuestion]
+        .where((i) => i > 0)
+        .reduce((a, b) => a > b ? a : b);
+
+    if (lastSentenceEnd > maxChars * 0.7) {
+      return '${truncated.substring(0, lastSentenceEnd + 1)}…';
+    }
+
+    return '$truncated…';
   }
 
-  int _titleBucket(String title) {
-    final len = title.trim().length;
-    if (len <= 45) return 3; // kurzer Titel -> mehr Excerpt
-    if (len <= 70) return 2; // mittel
-    return 1; // lang -> wenig Excerpt
+  String _formatTimestamp(DateTime updated) {
+    final now = DateTime.now();
+    final difference = now.difference(updated);
+
+    if (difference.inDays > 30) {
+      final months = (difference.inDays / 30).floor();
+      return '${months}mo';
+    } else if (difference.inDays > 7) {
+      final weeks = (difference.inDays / 7).floor();
+      return '${weeks}w';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays}d';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m';
+    } else {
+      return 'now';
+    }
+  }
+
+  void _toggleActionBar() {
+    setState(() {
+      _isActionBarExpanded = !_isActionBarExpanded;
+    });
+
+    if (_isActionBarExpanded) {
+      _actionBarController.forward();
+    } else {
+      _actionBarController.reverse();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size; // Seite = Bildschirm
+    final size = MediaQuery.of(context).size;
+    final padding = const EdgeInsets.all(16.0);
+    final imageHeight = size.height * 0.35; // Reduziert von 40% auf 35%
 
-    final title = widget.article.title;
-    final excerptLines = _titleBucket(title);
-
-    final template = widget.article.template; // steuert Layout-Variante
-
-    // Bildhöhe so wählen, dass es "wie im Beispiel" wirkt:
-    // ~ obere 60% Bild, unten Textblock
-    final imageHeight = (size.height * 0.58).clamp(360.0, 640.0);
+    final displayAuthor = widget.authorName ?? 'Max Meyer';
+    final displayCats =
+        widget.categories ?? const ['Aktuelles', 'Reisen', 'Wandern'];
+    final teaser = _extractTeaser(widget.article.content);
 
     return Container(
       width: size.width,
@@ -91,38 +151,107 @@ class _Story43ViewState extends State<_Story43View> {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          padding: padding,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ===== Großes Bild mit runden Ecken, Cover, Indikatoren im Bild ===
-              _TemplateImageArea(
-                template: template,
-                imageHeight: imageHeight,
-                images: _images,
-                currentIndex: _current,
-                onPageChanged: (i) => setState(() => _current = i),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ArticlePage(article: widget.article),
+              // ===== Bild (Header) =====
+              if (widget.article.imageUrls.isNotEmpty) ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: imageHeight,
+                  child: _ImageCarousel(
+                    images: widget.article.imageUrls,
+                    currentIndex: _current,
+                    onPageChanged: (i) => setState(() => _current = i),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ArticlePage(article: widget.article),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
+              // ===== Meta-Zeile mit Autor & Timestamp =====
+              Row(
+                children: [
+                  // Profilbild (Viereck)
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[200]!, width: 1),
                     ),
-                  );
-                },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: CachedNetworkImage(
+                        imageUrl:
+                            'https://i.pravatar.cc/150?u=${widget.article.id}',
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey[100],
+                          child: const Center(
+                            child: Icon(
+                              Icons.person,
+                              color: Colors.grey,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey[100],
+                          child: const Center(
+                            child: Icon(
+                              Icons.person,
+                              color: Colors.grey,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Autor-Name und Timestamp
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayAuthor,
+                          style: const TextStyle(
+                            color: Color(0xFF1F2937),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                            fontFamily: 'SF Pro Display',
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _formatTimestamp(widget.article.createdAt),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0.1,
+                            fontFamily: 'SF Pro Display',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-
-              const SizedBox(height: 20),
-
-              // ===== Meta-Zeile =================================================
-              MetaLine(
-                author: widget.authorName ?? 'Max Meyer',
-                categories: widget.categories ??
-                    const ['Aktuelles', 'Reisen', 'Wandern'],
-              ),
-
               const SizedBox(height: 12),
 
-              // ===== Headline (sehr groß, klickbar) =============================
+              // ===== Headline =====
               GestureDetector(
                 onTap: () {
                   Navigator.of(context).push(
@@ -131,34 +260,52 @@ class _Story43ViewState extends State<_Story43View> {
                     ),
                   );
                 },
-                child: Headline(
-                  text: title.toUpperCase(),
+                child: Text(
+                  widget.article.title,
                   style: const TextStyle(
                     fontSize: 28,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.bold,
                     color: Color(0xFF0F172A),
-                    height: 1.2,
-                    letterSpacing: -0.5,
+                    height: 1.3,
                   ),
-                  maxLines: 3,
+                  maxLines: 4,
                 ),
               ),
+              const SizedBox(height: 12),
 
-              // ===== Excerpt (optional, abhängig von Titel-Länge) ===============
-              if (excerptLines > 1) ...[
-                const SizedBox(height: 12),
-                Text(
-                  _excerptFromHtml(widget.article.content),
+              // ===== Content-Teaser =====
+              Container(
+                constraints: BoxConstraints(
+                  maxHeight: size.height * 0.12, // Reduziert von 15% auf 12%
+                ),
+                child: Text(
+                  teaser,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     color: Color(0xFF475569),
                     height: 1.5,
                     fontWeight: FontWeight.w400,
                   ),
-                  maxLines: excerptLines,
+                  maxLines: 3, // Reduziert von 4 auf 3 Zeilen
                   overflow: TextOverflow.ellipsis,
                 ),
-              ],
+              ),
+
+              // ===== Flexibler Abstand =====
+              Expanded(
+                child: const SizedBox.shrink(),
+              ),
+
+              // ===== Footer-Aktion =====
+              const SizedBox(height: 16), // Reduziert von 20 auf 16
+              ActionBar(
+                isExpanded: _isActionBarExpanded,
+                animation: _actionBarAnimation,
+                onTap: _toggleActionBar,
+              ),
+
+              // ===== Whitespace am Ende =====
+              const SizedBox(height: 12), // Reduziert von 16 auf 12
             ],
           ),
         ),
@@ -167,17 +314,13 @@ class _Story43ViewState extends State<_Story43View> {
   }
 }
 
-class _TemplateImageArea extends StatelessWidget {
-  final ArticleTemplate? template;
-  final double imageHeight;
+class _ImageCarousel extends StatelessWidget {
   final List<String> images;
   final int currentIndex;
   final ValueChanged<int> onPageChanged;
   final VoidCallback onTap;
 
-  const _TemplateImageArea({
-    required this.template,
-    required this.imageHeight,
+  const _ImageCarousel({
     required this.images,
     required this.currentIndex,
     required this.onPageChanged,
@@ -186,35 +329,53 @@ class _TemplateImageArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (images.isEmpty) {
-      return SizedBox(
-        height: imageHeight,
-        child: Container(
-          decoration: BoxDecoration(
+    if (images.length == 1) {
+      return GestureDetector(
+        onTap: onTap,
+        child: CachedNetworkImage(
+          imageUrl: images.first,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Container(
             color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(12),
+            child: const Center(child: CircularProgressIndicator()),
           ),
-          child: const Center(
-            child: Icon(Icons.image, size: 48, color: Colors.grey),
+          errorWidget: (context, url, error) => Container(
+            color: Colors.grey[200],
+            child: const Center(child: Icon(Icons.error)),
           ),
         ),
       );
     }
 
-    final borderRadius = BorderRadius.circular(12);
-    final imageContent = images.length == 1
-        ? _SingleImage(images.first)
-        : _MultiImageCarousel(
-            images: images,
-            currentIndex: currentIndex,
-            onPageChanged: onPageChanged,
-          );
-
-    final indicators = images.length > 1
-        ? Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
+    return Stack(
+      children: [
+        PageView.builder(
+          itemCount: images.length,
+          onPageChanged: onPageChanged,
+          itemBuilder: (context, index) {
+            return GestureDetector(
+              onTap: onTap,
+              child: CachedNetworkImage(
+                imageUrl: images[index],
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  color: Colors.grey[200],
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: Colors.grey[200],
+                  child: const Center(child: Icon(Icons.error)),
+                ),
+              ),
+            );
+          },
+        ),
+        // Bild-Indikatoren
+        if (images.length > 1)
+          Positioned(
+            bottom: 12,
+            left: 0,
+            right: 0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: images.asMap().entries.map((entry) {
@@ -222,116 +383,18 @@ class _TemplateImageArea extends StatelessWidget {
                 final isActive = index == currentIndex;
                 return Container(
                   width: isActive ? 24 : 8,
-                  height: 8,
+                  height: 4,
                   margin: const EdgeInsets.symmetric(horizontal: 2),
                   decoration: BoxDecoration(
                     color:
                         isActive ? Colors.white : Colors.white.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 );
               }).toList(),
             ),
-          )
-        : const SizedBox.shrink();
-
-    final tapOverlay = Positioned.fill(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(onTap: onTap),
-      ),
-    );
-
-    // CARD/STORY: fester Bereich mit Seitenverhältnissen 3:4 oder 4:3
-    if (template == ArticleTemplate.card34 ||
-        template == ArticleTemplate.story43 ||
-        template == null) {
-      final aspectRatio = template == ArticleTemplate.story43 ? 4 / 3 : 3 / 4;
-      return Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: imageHeight,
-            maxWidth: 1000,
           ),
-          child: AspectRatio(
-            aspectRatio: aspectRatio,
-            child: ClipRRect(
-              borderRadius: borderRadius,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  imageContent,
-                  indicators,
-                  tapOverlay,
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    // Fallback (sollte hier nicht landen, FULL_9_16 nutzt eigenes Widget in FeedPage)
-    return SizedBox(
-      height: imageHeight,
-      width: double.infinity,
-      child: ClipRRect(
-        borderRadius: borderRadius,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            imageContent,
-            indicators,
-            tapOverlay,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SingleImage extends StatelessWidget {
-  final String imageUrl;
-
-  const _SingleImage(this.imageUrl);
-
-  @override
-  Widget build(BuildContext context) {
-    return CachedNetworkImage(
-      imageUrl: imageUrl,
-      fit: BoxFit.cover,
-      placeholder: (context, url) => Container(
-        color: Colors.grey[200],
-        child: const Center(child: CircularProgressIndicator()),
-      ),
-      errorWidget: (context, url, error) => Container(
-        color: Colors.grey[200],
-        child: const Center(child: Icon(Icons.error)),
-      ),
-    );
-  }
-}
-
-class _MultiImageCarousel extends StatelessWidget {
-  final List<String> images;
-  final int currentIndex;
-  final ValueChanged<int> onPageChanged;
-
-  const _MultiImageCarousel({
-    required this.images,
-    required this.currentIndex,
-    required this.onPageChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return PageView.builder(
-      itemCount: images.length,
-      onPageChanged: onPageChanged,
-      itemBuilder: (context, index) {
-        return _SingleImage(images[index]);
-      },
+      ],
     );
   }
 }
