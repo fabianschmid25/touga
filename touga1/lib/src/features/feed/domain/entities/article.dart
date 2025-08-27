@@ -1,4 +1,4 @@
-enum ArticleTemplate { full916, card34, story43 }
+enum ArticleTemplate { full916, card34, story43, story43V1, story43V2 }
 
 ArticleTemplate? _parseTemplate(String? value) {
   switch (value) {
@@ -8,6 +8,10 @@ ArticleTemplate? _parseTemplate(String? value) {
       return ArticleTemplate.card34;
     case 'STORY_4_3':
       return ArticleTemplate.story43;
+    case 'STORY_4_3_V1':
+      return ArticleTemplate.story43V1;
+    case 'STORY_4_3_V2':
+      return ArticleTemplate.story43V2;
     default:
       return null;
   }

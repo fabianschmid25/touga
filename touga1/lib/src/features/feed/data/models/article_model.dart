@@ -8,6 +8,10 @@ ArticleTemplate? _parseTemplateModel(String? value) {
       return ArticleTemplate.card34;
     case 'STORY_4_3':
       return ArticleTemplate.story43;
+    case 'STORY_4_3_V1':
+      return ArticleTemplate.story43V1;
+    case 'STORY_4_3_V2':
+      return ArticleTemplate.story43V2;
     default:
       return null;
   }

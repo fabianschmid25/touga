@@ -4,12 +4,14 @@ class ActionBar extends StatelessWidget {
   final bool isExpanded;
   final Animation<double> animation;
   final VoidCallback onTap;
+  final Color? buttonColor;
 
   const ActionBar({
     super.key,
     required this.isExpanded,
     required this.animation,
     required this.onTap,
+    this.buttonColor,
   });
 
   @override
@@ -26,7 +28,7 @@ class ActionBar extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.black,
+                  color: buttonColor ?? Colors.black,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(

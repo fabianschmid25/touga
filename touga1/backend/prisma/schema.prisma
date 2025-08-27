@@ -17,7 +17,11 @@ enum Role {
 enum ArticleTemplate {
   FULL_9_16
   CARD_3_4
+  CARD_3_4_V1
+  CARD_3_4_V2
   STORY_4_3
+  STORY_4_3_V1
+  STORY_4_3_V2
 }
 
 
