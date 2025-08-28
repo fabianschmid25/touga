@@ -160,96 +160,114 @@ class _Story43ViewState extends State<_Story43View>
                 SizedBox(
                   width: double.infinity,
                   height: imageHeight,
-                  child: _ImageCarousel(
-                    images: widget.article.imageUrls,
-                    currentIndex: _current,
-                    onPageChanged: (i) => setState(() => _current = i),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ArticlePage(article: widget.article),
+                  child: Stack(
+                    children: [
+                      // Bild als Hintergrund
+                      _ImageCarousel(
+                        images: widget.article.imageUrls,
+                        currentIndex: _current,
+                        onPageChanged: (i) => setState(() => _current = i),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ArticlePage(article: widget.article),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // Meta-Zeile als Overlay oben links
+                      Positioned(
+                        top: 12,
+                        left: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Profilbild (kleiner, etwa so groß wie Text)
+                              Container(
+                                width: 16,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(3),
+                                  border: Border.all(
+                                      color: Colors.white.withOpacity(0.3),
+                                      width: 1),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(3),
+                                  child: CachedNetworkImage(
+                                    imageUrl:
+                                        'https://i.pravatar.cc/150?u=${widget.article.id}',
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => Container(
+                                      color: Colors.grey[100],
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.person,
+                                          color: Colors.grey,
+                                          size: 10,
+                                        ),
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        Container(
+                                      color: Colors.grey[100],
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.person,
+                                          color: Colors.grey,
+                                          size: 10,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+
+                              // Autor-Name (eine Zeile)
+                              Text(
+                                displayAuthor,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.2,
+                                  fontFamily: 'SF Pro Display',
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      );
-                    },
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 12),
               ],
 
-              // ===== Meta-Zeile mit Autor & Timestamp =====
-              Row(
-                children: [
-                  // Profilbild (Viereck)
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[200]!, width: 1),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: CachedNetworkImage(
-                        imageUrl:
-                            'https://i.pravatar.cc/150?u=${widget.article.id}',
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey[100],
-                          child: const Center(
-                            child: Icon(
-                              Icons.person,
-                              color: Colors.grey,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          color: Colors.grey[100],
-                          child: const Center(
-                            child: Icon(
-                              Icons.person,
-                              color: Colors.grey,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+              // ===== Subtitle =====
+              if (widget.article.subtitle.isNotEmpty) ...[
+                Text(
+                  widget.article.subtitle,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[600],
+                    fontStyle: FontStyle.italic,
+                    letterSpacing: 0.3,
                   ),
-                  const SizedBox(width: 12),
-
-                  // Autor-Name und Timestamp
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          displayAuthor,
-                          style: const TextStyle(
-                            color: Color(0xFF1F2937),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.2,
-                            fontFamily: 'SF Pro Display',
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _formatTimestamp(widget.article.createdAt),
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: 0.1,
-                            fontFamily: 'SF Pro Display',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
+                ),
+                const SizedBox(height: 8),
+              ],
 
               // ===== Headline =====
               GestureDetector(

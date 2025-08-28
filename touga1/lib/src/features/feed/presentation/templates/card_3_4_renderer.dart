@@ -168,7 +168,7 @@ class _Card34ViewState extends State<_Card34View>
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Meta-Zeile mit Autor & Timestamp
+                  // Meta-Zeile mit Autor & Kategorien
                   Row(
                     children: [
                       // Profilbild (Viereck)
@@ -211,7 +211,7 @@ class _Card34ViewState extends State<_Card34View>
                       ),
                       const SizedBox(width: 12),
 
-                      // Autor-Name und Timestamp
+                      // Autor-Name und Kategorien
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,16 +227,26 @@ class _Card34ViewState extends State<_Card34View>
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
-                              _formatTimestamp(widget.article.createdAt),
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                                letterSpacing: 0.1,
-                                fontFamily: 'SF Pro Display',
+                            if (displayCats.isNotEmpty)
+                              Container(
+                                height: 16, // Feste Höhe für eine Zeile
+                                child: Wrap(
+                                  spacing: 6,
+                                  runSpacing: 0,
+                                  children: displayCats.map((category) {
+                                    return Text(
+                                      category,
+                                      style: const TextStyle(
+                                        color: Color(0xFF888888),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w400,
+                                        letterSpacing: 0.1,
+                                        fontFamily: 'Roboto',
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
                               ),
-                            ),
                           ],
                         ),
                       ),
